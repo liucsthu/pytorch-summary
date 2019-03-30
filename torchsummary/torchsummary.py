@@ -6,8 +6,12 @@ from collections import OrderedDict
 import numpy as np
 
 
-def summary(model, input_size, batch_size=-1, device="cuda"):
-
+def summary(model, input_size,dtypes, batch_size=-1):
+    '''
+    model: torch model 
+    input_size: list of input size 
+    dtypes: input data types of model  
+    '''
     def register_hook(module):
 
         def hook(module, input, output):
@@ -41,23 +45,12 @@ def summary(model, input_size, batch_size=-1, device="cuda"):
         ):
             hooks.append(module.register_forward_hook(hook))
 
-    device = device.lower()
-    assert device in [
-        "cuda",
-        "cpu",
-    ], "Input device is not valid, please specify 'cuda' or 'cpu'"
-
-    if device == "cuda" and torch.cuda.is_available():
-        dtype = torch.cuda.FloatTensor
-    else:
-        dtype = torch.FloatTensor
-
     # multiple inputs to the network
     if isinstance(input_size, tuple):
         input_size = [input_size]
 
     # batch_size of 2 for batchnorm
-    x = [torch.rand(2, *in_size).type(dtype) for in_size in input_size]
+    x = [torch.rand(2, *in_size).type(dtypes[i]) for i,in_size in enumerate(input_size)]
     # print(type(x[0]))
 
     # create properties
@@ -97,7 +90,8 @@ def summary(model, input_size, batch_size=-1, device="cuda"):
         print(line_new)
 
     # assume 4 bytes/number (float on cuda).
-    total_input_size = abs(np.prod(input_size) * batch_size * 4. / (1024 ** 2.))
+    # total_input_size = abs(np.prod(input_size) * batch_size * 4. / (1024 ** 2.))
+    total_input_size = 0
     total_output_size = abs(2. * total_output * 4. / (1024 ** 2.))  # x2 for gradients
     total_params_size = abs(total_params.numpy() * 4. / (1024 ** 2.))
     total_size = total_params_size + total_output_size + total_input_size
@@ -107,9 +101,9 @@ def summary(model, input_size, batch_size=-1, device="cuda"):
     print("Trainable params: {0:,}".format(trainable_params))
     print("Non-trainable params: {0:,}".format(total_params - trainable_params))
     print("----------------------------------------------------------------")
-    print("Input size (MB): %0.2f" % total_input_size)
-    print("Forward/backward pass size (MB): %0.2f" % total_output_size)
-    print("Params size (MB): %0.2f" % total_params_size)
-    print("Estimated Total Size (MB): %0.2f" % total_size)
-    print("----------------------------------------------------------------")
+    # print("Input size (MB): %0.2f" % total_input_size)
+    # print("Forward/backward pass size (MB): %0.2f" % total_output_size)
+    # print("Params size (MB): %0.2f" % total_params_size)
+    # print("Estimated Total Size (MB): %0.2f" % total_size)
+    # print("----------------------------------------------------------------")
     # return summary
